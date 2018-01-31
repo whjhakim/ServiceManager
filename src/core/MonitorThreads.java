@@ -11,9 +11,6 @@ import common.NotifyThreadFactory;
 import common.TrackingExecutorService;
 import net.sf.json.JSONObject;
 import common.CommonHttpClient;
-import common.NotifyThread;
-import common.NotifyThreadFactory;
-import common.TrackingExecutorService;
 
 public class MonitorThreads {
 	private final NotifyThreadFactory notifyThreadFactory;

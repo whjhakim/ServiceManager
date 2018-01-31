@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -59,12 +58,27 @@ public class Monitor extends HttpServlet {
     }
 
 	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 *get the ns monitorTargets: request must be "range" = "ns" "name" = nsTypeId 
+	 *get the vnf monitorTargets: request must be "range" = "vnf " "name" = vnfNodeId "nsTypeId" = nsTypeId
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		request.setCharacterEncoding("UTF-8");
 		System.out.println("!!!!!! in the monitor function: doGet");
-		response.getWriter().write("welcome to the monitor\n");
+		String result = null;
+		if(request.getParameter("range") != null && request.getParameter("name") != null) {
+			String range = request.getParameter("range");
+			String name = request.getParameter("name");
+			switch(range) {
+				case "ns" :
+					result = this.monitorRepository.getNsMonitor(name).toString();
+					break;
+				case "vnf" :
+					result = this.monitorRepository.getVnfMonitor(name, request
+							.getParameter("nsTypeId")).toString();
+					break;
+			}
+		}
+		response.getWriter().write(result);
 	}
 
 	/**
@@ -260,9 +274,8 @@ public class Monitor extends HttpServlet {
 				}
 			}
 			format.mapItemId(monitorToItem);
-			this.monitorRepository.putMonitorFormat(format.getMonitorTarget(), format);
+			this.monitorRepository.putMonitorFormat(format);
 		}
-		this.monitorRepository.putVnfContains(vnfNodeId,vnfMonitorTargetsChain);
 	}
 	
 	private JSONObject parseUrl(String url) {
