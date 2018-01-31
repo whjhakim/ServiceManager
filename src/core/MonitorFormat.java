@@ -55,6 +55,14 @@ public class MonitorFormat {
 	public String getVnfNodeId() {
 		return this.vnfNodeId;
 	}
+	
+	public void setTimer(MonitorTimer monitorTimer) {
+		try {
+			monitorTimer.addTimer(this);
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+	}
 /*	public String request(ZabbixDriver zabbixDriver,ServiceMgr serviceMgr,String monConfigId) {
 		String itemId = "null";
 		for(MonitorConfigItem item : this.itemIdList) {

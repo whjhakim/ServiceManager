@@ -275,6 +275,7 @@ public class Monitor extends HttpServlet {
 			}
 			format.mapItemId(monitorToItem);
 			this.monitorRepository.putMonitorFormat(format);
+			format.setTimer(this.monitorTimer);
 		}
 	}
 	
