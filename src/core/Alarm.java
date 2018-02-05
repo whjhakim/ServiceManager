@@ -30,14 +30,12 @@ public class Alarm extends HttpServlet {
 	private String name  = "AlarmModule";
 	private AlarmRepository alarmRepository;
 	private CommonHttpClient httpToMonitor;
-	private CommonHttpClient httpToZabbix;
 
     public Alarm() {
         super();
 		System.out.println("!!!!!! alarm initiates");
 		this.alarmRepository = new AlarmRepository(); 
         this.httpToMonitor = new CommonHttpClient("http://192.168.0.20:8080/ServiceManager/monitor");
-        this.httpToZabbix = new CommonHttpClient("http://192.168.0.20:8080/ServiceManager/zabbixDriver");
     }
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

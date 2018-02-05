@@ -27,7 +27,7 @@
     <servlet-name>Monitor</servlet-name>
     <url-pattern>/monitor</url-pattern>
   </servlet-mapping>
-   <servlet>
+  <servlet>
     <servlet-name>ZabbixDrive</servlet-name>
     <servlet-class>zabbixdriver.ZabbixDriver</servlet-class>
     <load-on-startup>3</load-on-startup>

@@ -1,0 +1,11 @@
+driverTypes:
+  - driverType: OpenStack
+    monitorType:
+      - key: CPU
+        item:
+          - itemName: vCPUs
+      - key: disk
+        item:
+          - itemName: totalDisk
+          - itemName: swapDisk
+          - itemName: ephemeralDisk

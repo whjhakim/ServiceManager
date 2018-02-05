@@ -65,24 +65,28 @@ public class ZabbixDriver extends HttpServlet {
 			JSONObject acceptJSON  = JSONObject.fromObject(accept);
 			String requestType = acceptJSON.getString("type");
 			JSONObject requestBody = acceptJSON.getJSONObject("body");
+			String result = null;
 			switch(requestType) {
 				case "registerHostGroup" :
-					this.registerHostGroup(requestBody);
+					result = this.registerHostGroup(requestBody);
 					break;
 				case "registerProxy" :
-					this.registerProxy(requestBody);
+					result = this.registerProxy(requestBody);
 					break;
 				case "registerHost" :
-					this.registerHost(requestBody);
+					result = this.registerHost(requestBody);
 					break;
 				case "createItem" :
-					this.createItem(requestBody);
+					result = this.createItem(requestBody);
 					break;
 				case "getHistory" :
-					this.getHistory(requestBody);
+					result = this.getHistory(requestBody);
+					break;
+				case "getItem" :
+					result = this.getItem(requestBody);
 					break;
 			}
-			response.getWriter().write("happy");
+			response.getWriter().write(result);
 		}catch(Exception e){
 			e.printStackTrace();
 			response.getWriter().write("sad");
@@ -157,6 +161,15 @@ public class ZabbixDriver extends HttpServlet {
 		ItemRequestBody body = new ItemRequestBody(method,monitorConfig,auth);
 		String response = httpClient.doPost(body.getBodyString());	
 		return body.getItemId(response);
+	}
+	
+	//this itemInfo must contain the "itemId"
+	private String getItem(JSONObject itemInfo) {
+		String auth = getAuth();
+		String method = "item.get";
+		ItemRequestBody body = new ItemRequestBody(method,itemInfo,auth);
+		String response = httpClient.doPost(body.getBodyString());	
+		return body.getItemHostProxy(response).toString();
 	}
 	
 	private String getHistory(JSONObject params) {

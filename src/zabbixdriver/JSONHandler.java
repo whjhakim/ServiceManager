@@ -48,4 +48,17 @@ public class JSONHandler {
 		String newString = string.substring(0,start) + paramOne + string.substring(end+1, string.length());
 		return newString;
 	}
+	
+	public static JSONObject getHostProxy(String response) {
+		JSONObject responseJSON = JSONObject.fromObject(response);
+		JSONArray responseIds =  (JSONArray)responseJSON.get("result");
+		JSONObject result = new JSONObject();
+		for(Object responseId : responseIds) {
+			JSONObject responseIdJSON = JSONObject.fromObject(responseId);
+			result.put("groupId",String.valueOf(responseIdJSON.get("groupids")));
+			result.put("proxyId", String.valueOf(responseIdJSON.get("proxyids")));
+			break;
+		}
+		return result;
+	}
 }

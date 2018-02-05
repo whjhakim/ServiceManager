@@ -97,12 +97,82 @@ public class Monitor extends HttpServlet {
 			br.close();
 			String acceptJSON = stringBuffer.toString();
 			JSONObject monitorObject  = JSONObject.fromObject(acceptJSON);
-			this.copy(monitorObject);
+			if(monitorObject.getBoolean("action")) {
+				switch(monitorObject.getString("action")) {
+					case "add" :
+						this.addVnfcMonitor(monitorObject);
+						break;
+					case "delete" :
+						this.deleteVnfcMonitor(monitorObject);
+						break;
+				}
+				this.addVnfcMonitor(monitorObject);
+			}else {
+				this.copy(monitorObject);
+			}
 			response.getWriter().write("happy");
 		}catch(Exception e){
 			e.printStackTrace();
 			response.getWriter().write("sad");
 		}
+	}
+	private void addVnfcMonitor(JSONObject monitorObject) {
+		String nsTypeId = monitorObject.getString("nsTypeId");
+		String vnfNodeId = monitorObject.getString("vnfNodeId");
+		String vnfcNodeId = monitorObject.getString("vnfcNodeId");
+		String ip = monitorObject.getString("ip");
+		JSONArray monitorConfigs = monitorObject.getJSONArray("monitorConfigs");
+		String hostId = "null";
+		HashMap<String ,String > monitorToItem = new HashMap<String, String>();
+		for(Object monitorConfig : monitorConfigs) {
+			JSONObject monitorConfigBody = JSONObject.fromObject(monitorConfig);
+			String configId = monitorConfigBody.getString("id");
+			String id = nsTypeId + "%" + vnfNodeId + "%" + vnfcNodeId + "%" + configId;
+			MonitorConfigItem monitorConfigItem =  this.monitorRepository.getMonitorConfig(id);
+			if(hostId.equals("null")) {
+				//send request to the zabbix to get the group id and the proxyid
+				String defaultItemId = monitorConfigItem.getItemIds().get(0);
+				JSONObject body = new JSONObject();
+				body.put("itemId", defaultItemId);
+	  			JSONObject request = new JSONObject();
+	   			request.put("type","getItem");
+	   			request.put("body", body);
+	     		String response  = this.httpToZabbix.doPost(request.toString());
+	     		JSONObject responseJSON = JSONObject.fromObject(response);
+	     		String groupId = responseJSON.getString("groupId");
+	     		String proxyId = responseJSON.getString("proxyId");
+				hostId = this.vnfcNodeHandler(groupId, proxyId, vnfcNodeId, ip);
+			}
+			JSONObject params = monitorConfigItem.getParams();
+			params.put("hostId", (Object)hostId);
+			params.put("itemName",id);
+			monitorToItem.put(id, "null");
+			this.monitorThreads.handler(params, monitorToItem,1);
+		}
+		while(true) {
+			int count = 0;
+			for(String key :  monitorToItem.keySet()) {
+				if(monitorToItem.get(key) == "null") {
+					break;
+				}
+				count++;
+			}
+			if(count == monitorToItem.size()) {
+				break;
+			}
+		}
+		this.refreshMonitorConfig(monitorToItem);
+	}
+
+	private void refreshMonitorConfig(HashMap<String ,String > monitorToItem) {
+		for(String configId : monitorToItem.keySet()) {
+			MonitorConfigItem configItem = this.monitorRepository.getMonitorConfig(configId);
+			configItem.addItemId(monitorToItem.get(configId));
+		}
+	}
+
+	private void deleteVnfcMonitor(JSONObject monitorObject) {
+		
 	}
 	private void copy(JSONObject monitorInfo) {
 		try {
@@ -150,7 +220,7 @@ public class Monitor extends HttpServlet {
      		if(vnfId.get("vnfNodeId") == null) {
      			throw new Exception("vnfNodeId is missing");
      		}
-   			JSONObject request = new JSONObject();
+  			JSONObject request = new JSONObject();
    			request.put("type","registerHostGroup");
    			request.put("body", vnfId);
      		vnfGroupId = this.httpToZabbix.doPost(request.toString());//use vnfGroupId to create a host group for this vnf
@@ -159,6 +229,31 @@ public class Monitor extends HttpServlet {
 		}
 		String[] vnfGroup = {vnfGroupId, String.valueOf(vnfId.get("vnfNodeId"))};
 		return vnfGroup;
+	}
+	
+	private String vnfcNodeHandler(String groupId, String proxyId, String vnfcNodeId, String ip) {
+		HashMap<String,String> vnfcToHostId = new HashMap<String, String>();
+		JSONObject hostInfo = new JSONObject();
+		hostInfo.put("vnfcNodeId", vnfcNodeId);
+		hostInfo.put("ip",ip);
+		hostInfo.put("hostGroupId", groupId);
+		hostInfo.put("proxyId", proxyId);
+		vnfcToHostId.put(vnfcNodeId, "null");
+		this.monitorThreads.handler(hostInfo,vnfcToHostId,0);
+		while(true) {
+			int count = 0;
+			for(String key :  vnfcToHostId.keySet()) {
+				if(vnfcToHostId.get(key) == "null") {
+					break;
+				}
+				count++;
+			}
+			if(count == vnfcToHostId.size()) {
+				break;
+			}
+		}
+		//return hostId
+		return vnfcToHostId.get(vnfcNodeId);
 	}
 
 	/*
@@ -239,6 +334,9 @@ public class Monitor extends HttpServlet {
 			MonitorFormat format = new MonitorFormat(monitorTargetBody.get("format"),
 					 monitorTargetString,vnfNodeId,nsTypeId, monitorInterval);
 			Iterator<Object> iteratorParam = parameters.iterator();
+			//monitorConfig, target
+			Map<String, String> configToTarget = new HashMap<String,String>();
+			Map<String, JSONObject> configToParams = new HashMap<String, JSONObject>();
 			while(iteratorParam.hasNext()) {
 				JSONObject monConfigId = JSONObject.fromObject(iteratorParam.next());
 				String monitorConfigIdKey = "null";
@@ -249,6 +347,7 @@ public class Monitor extends HttpServlet {
 				System.out.println(monitorConfigIdKey);
 				JSONObject monitorConfigBody = JSONObject.fromObject(monConfigId.get(monitorConfigIdKey));
 				String hostId = vnfcToHostId.get(String.valueOf(monitorConfigBody.get("target")));
+				configToTarget.put(monitorConfigIdKey, String.valueOf(monitorConfigBody.get("target")));
 				JSONObject params = new JSONObject();
 				params.put("hostId", hostId);
 				params.put("updateTime", updateTime);
@@ -259,6 +358,7 @@ public class Monitor extends HttpServlet {
 				JSONObject monitorInfo = parseUrl(url);
 				params.put("monitorInfo", monitorInfo);
 				monitorToItem.put(monitorConfigIdKey, "null");
+				configToParams.put(monitorConfigIdKey, params);
 				this.monitorThreads.handler(params, monitorToItem,1);
 			}
 			while(true) {
@@ -273,7 +373,7 @@ public class Monitor extends HttpServlet {
 					break;
 				}
 			}
-			format.mapItemId(monitorToItem);
+			format.mapItemId(monitorToItem,configToTarget, nsTypeId, vnfNodeId, configToParams);
 			this.monitorRepository.putMonitorFormat(format);
 			format.setTimer(this.monitorTimer);
 		}

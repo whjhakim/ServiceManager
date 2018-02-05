@@ -1,5 +1,7 @@
 package core;
 import java.util.List;
+import org.apache.commons.lang.StringUtils;
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.*;
@@ -7,9 +9,12 @@ import net.sf.json.JSONObject;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+
 public class MonitorFormat {
 	public static final ScriptEngine jse = new ScriptEngineManager().getEngineByName("JavaScript");
-	private List<MonitorConfigItem> itemIdList = new ArrayList<MonitorConfigItem>();
+	
+	//monitorConfigId
+	private Map<String, MonitorConfigItem> itemMap = new HashMap<String, MonitorConfigItem>();
 
 	private String format;
 	private String monitorTarget;
@@ -27,15 +32,22 @@ public class MonitorFormat {
 		this.nsTypeId = nsTypeId;
 		this.interval = interval;
 	}
+
+	public Map<String, MonitorConfigItem>  getItemMap(){
+			return this.itemMap;
+	}
 	
-	public void mapItemId(HashMap<String,String> map) {
+	public void mapItemId(HashMap<String,String> map, Map<String,String> configToTarget
+			, String nsTypeId, String vnfNodeId, Map<String,JSONObject> configToParams) {
 		Pattern pattern = Pattern.compile("\\{\\{(.*?)\\}\\}");
 		Matcher m = pattern.matcher(this.format);
 		while(m.find()) {
 			String itemId = map.get(m.group(1));
-			MonitorConfigItem configItem = new MonitorConfigItem(m.group(1),itemId);
-			itemIdList.add(configItem);
-			this.format = this.format.replace(m.group(1), itemId);
+			MonitorConfigItem configItem = new MonitorConfigItem(m.group(1), itemId,
+					configToTarget.get(m.group(1)), nsTypeId, vnfNodeId, configToParams.get(m.group(1)));
+			itemMap.put(configItem.getConfigId(), configItem);
+			configItem.setMonitorFormat(this);
+			this.format = this.format.replace(m.group(1), configItem.getConfigId());
 		}
 		System.out.println("========");
 		System.out.println(this.format);
@@ -87,10 +99,22 @@ public class MonitorFormat {
 	
 	public String request(MonitorThreads monitorThreads) {
 		HashMap<String,String> resultMap = new HashMap<String,String>();
-		for(MonitorConfigItem itemId : itemIdList) {
-			resultMap.put(itemId.getItemId(),"null" );
+		for(MonitorConfigItem configId : itemMap.values()) {
+			if(configId.getItemIds().size() >= 2) {
+				for(String item : configId.getItemIds()) {
+					resultMap.put(item,"null");
+					JSONObject params = new JSONObject();
+					params.put("itemids", item);
+					params.put("limit", 1);
+					//System.out.print("in the request\n");
+					//System.out.print(params);
+					monitorThreads.handler(params, resultMap, 2);
+				}
+				continue;
+			}
+			resultMap.put(configId.getItemIds().get(0),"null" );
 			JSONObject params = new JSONObject();
-			params.put("itemids", itemId.getItemId());
+			params.put("itemids", configId.getItemIds().get(0));
 			params.put("limit", 1);
 			System.out.print("in the request\n");
 			System.out.print(params);
@@ -104,7 +128,7 @@ public class MonitorFormat {
 				}
 				count++;
 			}
-			if(count == this.itemIdList.size()) {
+			if(count == resultMap.size()) {
 				break;
 			}
 		}
@@ -113,7 +137,16 @@ public class MonitorFormat {
 		String returnValue = this.format;
 		while(m.find()) {
 			count++;
-			String itemValue = resultMap.get(m.group(1));
+			if(this.itemMap.get(m.group(1)).size() > 1) {
+				List<String> middleResult = new ArrayList<String>();
+				for(String itemId : this.itemMap.get(m.group(1)).getItemIds()) {
+					middleResult.add(resultMap.get(itemId));
+				}
+				String unit = "{{" + m.group(1) + "}}" ;
+				returnValue = returnValue.replace(unit, StringUtils.join(middleResult,"+"));
+				continue;
+			}
+			String itemValue = resultMap.get(this.itemMap.get(m.group(1)).getConfigId());
 			String unit = "{{" + m.group(1) + "}}" ;
 			System.out.println("unit is " + unit);
 			returnValue = returnValue.replace(unit, itemValue);

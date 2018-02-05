@@ -5,10 +5,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.HashMap;
 
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 public class ItemRequestBody extends RequestBody{
 	private static List<String> methodList = Collections.synchronizedList(
-			new ArrayList<String>(){{add("item.update"); add("item.create");add("item.delete");}});
+			new ArrayList<String>(){{add("item.update"); add("item.create");add("item.delete");add("item.get");}});
 	
 	//upload the custom script to the zabbix server execPath
 	private static final String execPath = "/home/customeScript/";
@@ -43,6 +44,8 @@ public class ItemRequestBody extends RequestBody{
 				break;
 			case "item.update" :
 				setItemUpdate(params);
+			case "item.get" :
+				setItemGet(params);
 			default :
 				break;
 		}
@@ -63,6 +66,14 @@ public class ItemRequestBody extends RequestBody{
 		List<String> parameters = new ArrayList<String>();
 		parameters.add(String.valueOf(params.get("itemId")));
 		body.put("params", parameters);		
+	}
+	
+	public void setItemGet(JSONObject params) {
+		JSONObject parameters = new JSONObject();
+		JSONArray itemList = new JSONArray();
+		itemList.add(String.valueOf(params.get("itemId")));
+		parameters.put("itemids",itemList);
+		body.put("params", parameters);
 	}
 	
 	
@@ -125,5 +136,9 @@ public class ItemRequestBody extends RequestBody{
 	
 	public String getItemId(String response) {
 		return JSONHandler.getId(response, "itemids");
+	}
+	
+	public JSONObject getItemHostProxy(String response) {
+		return JSONHandler.getHostProxy(response);
 	}
 }
