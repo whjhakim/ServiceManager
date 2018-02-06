@@ -11,7 +11,6 @@ public class NewtonTimer {
 	private Map<String, NewtonTimerTask> timerMap = new HashMap<String, NewtonTimerTask>();
 
 	public NewtonTimer(long gap) {
-		System.out.println("!!!!!! alarm timer initiates");
 		this.timer = new Timer();
 		this.gap = gap;
 	}

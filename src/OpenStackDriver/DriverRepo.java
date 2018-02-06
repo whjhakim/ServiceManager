@@ -1,18 +1,60 @@
 package OpenStackDriver;
 
+import java.io.FileInputStream;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.yaml.snakeyaml.Yaml;
+
 import net.sf.json.JSONObject;
 
 public class DriverRepo {
 	//serverId: disk cpu vmInfo
 	private Map<String, Map<String, Map<String, String>>> serversInfo;
+	
+	//serverId publicIp
+	private Map<String , String> serverIp;
+	
+	//extend type, item ,command
+	private Map<String, Map<String,String>> itemCommand;
+	
 	public DriverRepo() {
 		this.serversInfo = new HashMap<String, Map<String, Map<String, String>>>();
+		this.serverIp = new HashMap<String, String>();
+		this.itemCommand = new HashMap<String, Map<String,String>>();
+		this.extendType();
+	}
+	
+	private void extendType(){
+		String path = System.getProperty("user.dir") + "/src/OpenStackDriver/ExtendType.yaml";
+		Yaml yaml = new Yaml();
+		JSONObject result = null;
+		try {
+			result =JSONObject.fromObject(yaml.load(new FileInputStream(path)));
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		for(Object obj : result.keySet()) {
+			String type = obj.toString();
+			JSONObject items = JSONObject.fromObject(result.get(obj));
+			for(Object item : items.keySet()) {
+				String command = String.valueOf(items.get(item));
+				String itemStr = item.toString();
+				this.itemCommand.get(type).put(itemStr, command);
+			}
+		}
 	}
 	
 	public boolean containServer(String server) {
 		return this.serversInfo.containsKey(server);
+	}
+	
+	public String getServerIp(String server) {
+		return this.serverIp.get(server);
+	}
+	
+	public Map<String, Map<String, String>> getItemMap(){
+		return this.itemCommand;
 	}
 	
 	public void registerServer(String server) {
@@ -72,6 +114,13 @@ public class DriverRepo {
 		vmInfo.put("vmId", "null");
 		
 		serverInfo.put("vmInfo", vmInfo);
+		
+		Map<String,String> disk = new HashMap<String, String>();
+		disk.put("totalDisk", "null");
+		disk.put("freeDisk", "null");
+
+		serverInfo.put("disk", disk);
+
 		System.out.println("initiate the serverObj");
 		return serverInfo;
 	}
