@@ -2,51 +2,77 @@ package OpenStackDriver;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import net.sf.json.JSONObject;
 
 public class DriverRepo {
 	//serverId: disk cpu vmInfo
-	private Map<String, JSONObject> serversInfo = new HashMap<String, JSONObject>();
+	private Map<String, Map<String, Map<String, String>>> serversInfo;
 	public DriverRepo() {
+		this.serversInfo = new HashMap<String, Map<String, Map<String, String>>>();
 	}
 	
 	public boolean containServer(String server) {
 		return this.serversInfo.containsKey(server);
 	}
 	
-	public void createServer(String server) {
-		if(!this.serversInfo.containsKey(server)) {
-			JSONObject serverObj = this.initiateServerObj(); 
-			this.serversInfo.put(server, serverObj);
-		}
+	public void registerServer(String server) {
+		System.out.println("register server");
+		Map<String,Map<String, String>> serverObj = this.initiateServerObj(); 
+		this.serversInfo.put(server, serverObj);
+		String testValue = this.serversInfo.get(server).get("vmInfo").get("host");
+		System.out.println("test value is" + testValue);
 	}
 	
-	public String getItemValue(String serverId, String type, String item) {
-		return this.serversInfo.get(serverId).getJSONObject(type).getString(item);
+	//for doGet
+	public String getItemValue(String itemId) {
+		String[] itemList = itemId.split("_");
+		if(itemList.length != 3) {
+			return "not exist ";
+		}
+		System.out.println("server is" + itemList[0]);
+		System.out.println("type is" + itemList[1]);
+		System.out.println("item is" + itemList[2]);
+		String serverId = itemList[0];
+		String type = itemList[1];
+		String item = itemList[2];
+		//String itemValue = this.serversInfo.get(serverId).getJSONObject(type).getString(item);
+		System.out.println("contain server or not is " + this.serversInfo.containsKey(serverId));
+		try {
+			System.out.println("contain type or not is " + this.serversInfo.get(serverId).containsKey(type));
+			System.out.println("contain item or not is " + this.serversInfo.get(serverId).get(type).containsKey(item));
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		String itemValue = this.serversInfo.get(serverId).get(type).get(item);
+		System.out.println("itemValue is " + itemValue);
+		return itemValue;
 	}
-	private JSONObject initiateServerObj() {
-		JSONObject disk = new JSONObject();
-		disk.put("totalDisk", "null");
-		disk.put("swapDisk","null");
-		disk.put("ephemeralDisk", "null");
+	
+	//for check
+	public String getItemValue(String serverId, String type, String item) {
+		return this.serversInfo.get(serverId).get(type).get(item);
+	}
+	
+	public String createItemId(String serverId, String type, String item) {
+		String itemId = serverId + "_" + type + "_" +  item;
+		return itemId;
+	}
+	
+	public void refresh(String serverId, Map<String, Map<String, String>> result) {
+		this.serversInfo.put(serverId, result);
+	}
 
-		JSONObject cpu = new JSONObject();
-		cpu.put("vCPUs", "null");
-
-		JSONObject vmInfo = new JSONObject();
+	private Map<String, Map<String, String>> initiateServerObj() {
+		Map<String, Map<String,String>> serverInfo = new HashMap<String, Map<String, String>>();
+		Map<String, String> vmInfo = new HashMap<String, String>();
 		vmInfo.put("vmState", "null");
 		vmInfo.put("powerState", "null");
 		vmInfo.put("launchTime", "null");
 		vmInfo.put("host", "null");
 		vmInfo.put("vmId", "null");
 		
-		JSONObject returnJSON = new JSONObject();
-		returnJSON.put("disk", disk);
-		returnJSON.put("CPU", cpu);
-		returnJSON.put("vmInfo", vmInfo);
-		return returnJSON;
+		serverInfo.put("vmInfo", vmInfo);
+		System.out.println("initiate the serverObj");
+		return serverInfo;
 	}
-	
-	
 }

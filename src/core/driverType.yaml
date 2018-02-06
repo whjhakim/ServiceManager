@@ -1,11 +1,10 @@
 driverTypes:
   - driverType: OpenStack
     monitorType:
-      - key: CPU
+      - key: vmInfo
         item:
-          - itemName: vCPUs
-      - key: disk
-        item:
-          - itemName: totalDisk
-          - itemName: swapDisk
-          - itemName: ephemeralDisk
+          - itemName: vmState
+          - itemName: launchTime
+          - itemName: host
+          - itemName: vmId
+          - itemName: powerState

@@ -2,6 +2,9 @@ package OpenStackDriver;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -17,7 +20,7 @@ import net.sf.json.JSONObject;
 public class NewtonHttpClient {
 	private URI authUri;
 	private String novaBaseUrl = "http://192.168.0.21:8774/v2.1/";
-	private String heatBaseUrl = "http://192.168.0.21:8004/v1/";
+	//private String heatBaseUrl = "http://192.168.0.21:8004/v1/";
 	private String tenantId;
 	private String password;
 	private String userName;
@@ -25,7 +28,6 @@ public class NewtonHttpClient {
 
 	private String tokenId;
 	private long expireTime;
-	private JSONObject xAuth = new JSONObject();
 	private String tenantName;
 	
 	public NewtonHttpClient() {
@@ -42,11 +44,8 @@ public class NewtonHttpClient {
 		String response = this.getAuthResponse();
 		JSONObject responseJSON = JSONObject.fromObject(response);
 		JSONObject access = JSONObject.fromObject(responseJSON.get("access"));
-		this.tokenId = JSONObject.fromObject(responseJSON.get("token")).getString("id");
+		this.tokenId = JSONObject.fromObject(access.get("token")).getString("id");
 		this.expireTime = System.currentTimeMillis() + 10*60*1000;
-		JSONObject xAuthToken = new JSONObject();
-		xAuthToken.put("X-auth-Token", this.tokenId);
-		this.xAuth = xAuthToken;
 		JSONObject tenant = JSONObject.fromObject(access.get("token")).getJSONObject("tenant");
 		this.tenantId = tenant.getString("id");
 	}
@@ -57,49 +56,77 @@ public class NewtonHttpClient {
 		passwordCredentials.put("username", this.userName);
 		passwordCredentials.put("password", this.password);
 		authBody.put("tenantName", this.tenantName);
-		authBody.put("passowordCredentials", passwordCredentials);
+		authBody.put("passwordCredentials", passwordCredentials);
 		JSONObject auth = new JSONObject();
 		auth.put("auth", authBody);
 		String response = this.doPost(auth.toString());
 		return response;
 	}
 	
+	public  Map<String, Map<String, String>> doGet(String serverId) {
+		try {
+			long nowTime = System.currentTimeMillis();
+			if(nowTime > this.expireTime) {
+				this.auth();
+			}
+			String urlParam = this.novaBaseUrl + this.tenantId + "/servers/" + serverId;
+			System.out.println("urlParam is" + urlParam);
+			URI uri = new URI(new String(urlParam).trim());
+			HttpUriRequest httpRequest = RequestBuilder.get().setUri(uri)
+					.addHeader("Content-Type", "application/json")
+					.addHeader("X-auth-Token", this.tokenId).build();
+			CloseableHttpResponse response = httpClient.execute(httpRequest);
+			HttpEntity entity = response.getEntity();
+			byte[] data = EntityUtils.toByteArray(entity);
+			String dataResponse = new String(data);
+			System.out.println("response data is" + dataResponse);
+			Map<String, Map<String, String>> responseMap = this.copyServerResponse(dataResponse);
+			return responseMap;
+		}catch(Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
 	public String doPost(String body) {
 		try {
-			HttpUriRequest httpRequest = RequestBuilder.post().setUri(this.uri)
+			HttpUriRequest httpRequest = RequestBuilder.post().setUri(this.authUri)
 					.addHeader("Content-Type", "application/json")
 					.setEntity(new StringEntity(body,ContentType.APPLICATION_JSON)).build();
 			CloseableHttpResponse response = httpClient.execute(httpRequest);
 			HttpEntity entity = response.getEntity();
 			byte[] data = EntityUtils.toByteArray(entity);
 			String dataResponse = new String(data);
+			System.out.println("openstack return base is" + dataResponse);
 			return dataResponse;
 		}catch(IOException e) {
+			e.printStackTrace();
 			return "error";
 		}
 	}
 	
-	public JSONObject copyServerResponse(String response) {
+	public Map<String, Map<String, String>> copyServerResponse(String response) {
 		JSONObject server = JSONObject.fromObject(response);
-		JSONObject flavor = server.getJSONObject("server").getJSONObject("flavor");
-		JSONObject disk = new JSONObject();
+		JSONObject serverInfo = server.getJSONObject("server");
+		//JSONObject flavor = server.getJSONObject("server").getJSONObject("flavor");
+/*		JSONObject disk = new JSONObject();
 		disk.put("totalDisk", flavor.getString("disk"));
 		disk.put("swapDisk", flavor.getString("swap"));
 		disk.put("ephemeralDisk", flavor.getString("ephemeral"));
 		JSONObject cpu = new JSONObject();
-		cpu.put("vCPUs", flavor.getString("vcpus"));
-		JSONObject vmInfo = new JSONObject();
-		vmInfo.put("vmState", server.getString("OS-EXT-STS:vm_state"));
-		vmInfo.put("powerState", server.getString("OS-EXT-STS:power_state"));
-		vmInfo.put("launchTime", server.getString("OS-EXT-USG:launched_at"));
-		vmInfo.put("host", server.getString("OS-EXT-USG:launched_at"));
-		vmInfo.put("vmId", server.getString("id"));
+		cpu.put("vCPUs", flavor.getString("vcpus"));*/
+		Map<String, String> vmInfo = new HashMap<String, String>();
+		vmInfo.put("vmState", serverInfo.getString("OS-EXT-STS:vm_state"));
+		vmInfo.put("powerState", serverInfo.getString("OS-EXT-STS:power_state"));
+		vmInfo.put("launchTime", serverInfo.getString("OS-SRV-USG:launched_at"));
+		vmInfo.put("host", serverInfo.getString("hostId"));
+		vmInfo.put("vmId", serverInfo.getString("id"));
 		
-		JSONObject returnJSON = new JSONObject();
-		returnJSON.put("disk", disk);
-		returnJSON.put("CPU", cpu);
-		returnJSON.put("vmInfo", vmInfo);
-		return returnJSON;
+		Map<String, Map<String, String>> returnMap = new HashMap<String, Map<String,String>>();
+/*		returnJSON.put("disk", disk);
+		returnJSON.put("CPU", cpu);*/
+		returnMap.put("vmInfo", vmInfo);
+		return returnMap;
 	}
 	
 /*	public static void main(String[] args) {

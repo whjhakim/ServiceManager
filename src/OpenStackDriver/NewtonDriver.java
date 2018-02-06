@@ -19,31 +19,35 @@ import net.sf.json.JSONObject;
 public class NewtonDriver extends HttpServlet {
 	private static final long serialVersionUID = 1L;
     private DriverRepo driverRepo; 
-    private NewtonHttpClient OpenStackHttpClient;
-    private OpenStackTimer openstackTimer;
-    /**
-     * @see HttpServlet#HttpServlet()
-     */
+    private NewtonHttpClient newtonHttpClient;
+    private NewtonTimer newtonTimer;
+
     public NewtonDriver() {
         super();
+        System.out.println("newton Driver initiates");
         driverRepo = new DriverRepo(); 
-        this.OpenStackHttpClient = new NewtonHttpClient();
+        this.newtonHttpClient = new NewtonHttpClient();
         
-        long gap = 1000;
-        this.openstackTimer = new OpenStackTimer(gap);
+        long gap = 30000;
+        this.newtonTimer = new NewtonTimer(gap);
     }
 
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
-	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		response.getWriter().append("Served at: ").append(request.getContextPath());
+		request.setCharacterEncoding("UTF-8");
+		String result = "null";
+		System.out.println(request.getParameter("number"));
+		System.out.println(request.getParameter("itemId"));
+		if(request.getParameter("itemId") != null) {
+			String monitorItemId = request.getParameter("itemId");
+			try {
+				result = this.driverRepo.getItemValue(monitorItemId);
+			}catch(Exception e) {
+				e.printStackTrace();
+			}
+		}
+		response.getWriter().write(result);
 	}
 
-	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
-	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("text/html;charset=UTF-8");
 		try {
@@ -59,20 +63,26 @@ public class NewtonDriver extends HttpServlet {
 			String serverId = monitorObject.getString("serverId");
 			String type = monitorObject.getString("type");
 			String item = monitorObject.getString("item");
-			response.getWriter().write("happy");
+			String itemId = this.register(serverId, type, item);
+			JSONObject itemJSON = new JSONObject();
+			itemJSON.put("itemId", itemId);
+			response.getWriter().write(itemJSON.toString());
 		}catch(Exception e){
 			e.printStackTrace();
 			response.getWriter().write("sad");
 		}
 	}
-	public void copy(String serverId, String type, String item) {
+
+	//return itemId
+	public String register(String serverId, String type, String item) {
 		if(!this.driverRepo.containServer(serverId)) {
-			this.driverRepo.containServer(serverId);
+			System.out.println("not contain the server");
+			this.driverRepo.registerServer(serverId);
 		}
 		if(this.driverRepo.getItemValue(serverId, type, item).equals("null")) {
 			//means the timer is not set
-			this.openstackTimer.addTimer(serverId);
+			this.newtonTimer.addTimer(serverId, this.newtonHttpClient, this.driverRepo);
 		}
+		return this.driverRepo.createItemId(serverId, type, item);
 	}
-
 }

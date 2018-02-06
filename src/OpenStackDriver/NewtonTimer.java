@@ -7,6 +7,7 @@ import java.util.Timer;
 public class NewtonTimer {
 	private Timer timer;
 	private long gap;
+	//serverId , timerTask
 	private Map<String, NewtonTimerTask> timerMap = new HashMap<String, NewtonTimerTask>();
 
 	public NewtonTimer(long gap) {
@@ -15,18 +16,16 @@ public class NewtonTimer {
 		this.gap = gap;
 	}
 	
-	public void addTimer(String serverId, NewtonHttpClient httpClient) {
-		NewtonTimerTask newtonTimerTask = new NewtonTimerTask(serverId, httpClient);
-		this.timerMap.get(alarmFormat.getNsTypeId()).put(alarmFormat.getAlarmId(), alarmTimerTask);
-
-		String interval = alarmFormat.getInterval();
-		timer.schedule(alarmTimerTask, 0, Long.valueOf(interval));
+	public void addTimer(String serverId, NewtonHttpClient httpClient, DriverRepo driverRepo) {
+		NewtonTimerTask newtonTimerTask = new NewtonTimerTask(serverId, httpClient, driverRepo);
+		this.timerMap.put(serverId, newtonTimerTask);
+		timer.schedule(newtonTimerTask, 0, this.gap);
 	}
 	
-	public void deleteTimer(String nsTypeId, String alarmId) {
-		AlarmTimerTask alarmTimerTask = this.timerMap.get(nsTypeId).get(alarmId);
-		alarmTimerTask.cancel();
-		this.timerMap.get(nsTypeId).remove(alarmId);
+	public void deleteTimer(String serverId) {
+		NewtonTimerTask newtonTimerTask = this.timerMap.get(serverId);
+		newtonTimerTask.cancel();
+		this.timerMap.remove(serverId);
 	}
 	
 	public void stopAllTimers() {
