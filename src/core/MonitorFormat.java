@@ -49,8 +49,6 @@ public class MonitorFormat {
 			configItem.setMonitorFormat(this);
 			this.format = this.format.replace(m.group(1), configItem.getConfigId());
 		}
-		System.out.println("========");
-		System.out.println(this.format);
 	}
 	
 	public String getMonitorTarget() {

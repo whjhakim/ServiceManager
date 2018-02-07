@@ -2,11 +2,8 @@ package OpenStackDriver;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimerTask;
-
 import org.apache.commons.lang.StringUtils;
-
 import common.SSHHelper;
-import net.sf.json.JSONObject;
 
 public class NewtonTimerTask extends TimerTask{
 	private String serverId;

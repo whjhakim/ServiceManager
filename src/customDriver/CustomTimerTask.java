@@ -1,12 +1,8 @@
 package customDriver;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TimerTask;
-
 import org.apache.commons.lang.StringUtils;
-
 import common.SSHHelper;
-import net.sf.json.JSONObject;
 
 public class CustomTimerTask extends TimerTask{
 	private String itemId;
@@ -39,10 +35,10 @@ public class CustomTimerTask extends TimerTask{
 	public String createExtractCmd(String fileName) {
 		String cmd = null;
 		if(fileName.endsWith(".tar")) {
-			cmd = "tar -xvf " + fileName + " -C /tmp/";
+			cmd = "tar -xvf " + "/tmp/" + fileName + " -C /tmp/";
 		}
 		if(fileName.endsWith(".tar.gz") || fileName.endsWith(".tgz")) {
-			cmd = "tar -xzvf " + fileName + " -C /tmp/";
+			cmd = "tar -xzvf " + "/tmp/" +  fileName + " -C /tmp/";
 		}
 		return cmd;
 	}

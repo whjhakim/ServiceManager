@@ -2,9 +2,6 @@ package common;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-
-import org.apache.commons.lang.StringUtils;
-
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSch;
@@ -34,11 +31,11 @@ public class SSHHelper {
 		this.ip = ip;
 		this.username = "root";
 		this.password = "123456";
+		stdout = new ArrayList<String>();
 	}
   
 
 	public String execute(final String command) {
-		int returnCode = 0;
 		JSch jsch = new JSch();
 		SSHUserInfo userInfo = new SSHUserInfo();
   
@@ -64,14 +61,11 @@ public class SSHHelper {
 			//接收远程服务器执行命令的结果
 			String line;
 			while ((line = input.readLine()) != null) { 
+				System.out.println("line is " + line);
 				stdout.add(line); 
 			} 
+			System.out.print("out the while and command is" + command);
 			input.close(); 
-  
-			// 得到returnCode
-			if (channelExec.isClosed()) { 
-				returnCode = channelExec.getExitStatus(); 
-			} 
   
 			// 关闭通道
 			channelExec.disconnect();

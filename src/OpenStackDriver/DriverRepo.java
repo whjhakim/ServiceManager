@@ -1,13 +1,8 @@
 package OpenStackDriver;
-
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.yaml.snakeyaml.Yaml;
-
 import net.sf.json.JSONObject;
 
 public class DriverRepo {

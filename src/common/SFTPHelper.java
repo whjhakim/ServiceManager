@@ -18,7 +18,12 @@ public class SFTPHelper {
     
     public SFTPHelper(String ftpHost,String ftpUserName,String ftpPassword,String port) {
     	sftpDetails = new HashMap<String,String>(){
-    		{
+    		/**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			{
     			put("ftpHost", ftpHost);
     			put("ftpUserName", ftpUserName);
     			put("ftpPassword", ftpPassword);

@@ -26,7 +26,19 @@ public class CustomRepo {
 	public String register(String server, String monitorTarget, String monitorConfig,
 			String filePath, String ip, String command) {
 		this.serverIp.put(server, ip);
-		this.serversInfo.get(server).get(monitorTarget).put(monitorConfig, filePath);
+		if(!this.serversInfo.containsKey(server)) {
+			Map<String, String> monitorTargetMap = new HashMap<String, String>();
+			monitorTargetMap.put(monitorConfig, filePath);
+			Map<String, Map<String, String>> serverMap = new HashMap<String, Map<String, String>>();
+			serverMap.put(monitorTarget, monitorTargetMap);
+			this.serversInfo.put(server, serverMap);
+		}else if( !this.serversInfo.get(server).containsKey(monitorTarget)) {
+			Map<String, String> monitorTargetMap = new HashMap<String, String>();
+			monitorTargetMap.put(monitorConfig, filePath);
+			this.serversInfo.get(server).put(monitorTarget, monitorTargetMap);
+		}else {
+			this.serversInfo.get(server).get(monitorTarget).put(monitorConfig, filePath);
+		}
 		String itemId =  this.createItemId(server, monitorTarget, monitorConfig, command, filePath);
 		this.transport(ip, filePath);
 		return itemId;
@@ -40,6 +52,7 @@ public class CustomRepo {
 		itemInfo.put("command", command);
 		String[] fileDir = filePath.split("/");
 		String fileName = fileDir[fileDir.length-1];
+		System.out.println("fileName is " + fileName);
 		itemInfo.put("fileName", fileName);
 		this.quickCache.put(itemId, itemInfo);
 		return itemId;

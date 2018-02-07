@@ -330,7 +330,6 @@ public class Monitor extends HttpServlet {
 			JSONObject monitorTargetBody = JSONObject.fromObject(monitorTarget.get(monitorTargetString));
 			String monitorInterval = monitorTargetBody.getString("interval");
 			JSONArray parameters = JSONArray.fromObject(monitorTargetBody.get("parameters"));
-			Object updateTime = monitorTargetBody.get("updateTime");
 			MonitorFormat format = new MonitorFormat(monitorTargetBody.get("format"),
 					 monitorTargetString,vnfNodeId,nsTypeId, monitorInterval);
 			Iterator<Object> iteratorParam = parameters.iterator();
@@ -347,6 +346,7 @@ public class Monitor extends HttpServlet {
 				System.out.println(monitorConfigIdKey);
 				JSONObject monitorConfigBody = JSONObject.fromObject(monConfigId.get(monitorConfigIdKey));
 				String hostId = vnfcToHostId.get(String.valueOf(monitorConfigBody.get("target")));
+				Object updateTime = monitorConfigBody.get("updateTime");			
 				configToTarget.put(monitorConfigIdKey, String.valueOf(monitorConfigBody.get("target")));
 				JSONObject params = new JSONObject();
 				params.put("hostId", hostId);
@@ -354,7 +354,6 @@ public class Monitor extends HttpServlet {
 				params.put("itemName", monitorConfigIdKey);
 				//lack interface id
 				String url = String.valueOf(JSONObject.fromObject(monitorConfigBody.get("script")).get("url"));
-				System.out.println("==" + url);
 				JSONObject monitorInfo = parseUrl(url);
 				params.put("monitorInfo", monitorInfo);
 				monitorToItem.put(monitorConfigIdKey, "null");

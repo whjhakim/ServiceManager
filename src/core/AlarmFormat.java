@@ -14,13 +14,16 @@ import javax.script.ScriptEngineManager;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
 
 import org.apache.commons.lang.StringUtils;
 
 public class AlarmFormat {
+	public final static String alarmRootPath = "/tmp/";
 	private String alarmId;
-	private String csarFilePath;
+	private String csarFilePath;//absolute
+	private String fileName;
 
 	//private String packType = null;
 	private String statFormat;
@@ -91,7 +94,7 @@ public class AlarmFormat {
 			String targetName = String.valueOf(obj);
 			String vnf = this.searchVnf(targetToVnf,targetName);
 			Map<String,String> targetMap = new HashMap<String,String>();
-			targetMap.put("value", "");
+			targetMap.put("value", "null");
 			targetMap.put("vnf", vnf);
 			this.vnfSet.add(vnf);
 			involveMonitorTargets.put(targetName, targetMap);
@@ -108,20 +111,13 @@ public class AlarmFormat {
 				return key;
 			}
 		}
-		return "";
+		return "null";
 	}
 
 	private void filePathCopy(String filePath) {
-		String dir = "";
-		for(String type : AlarmFormat.compressType) {
-			if(filePath.endsWith(type)) {
-				dir = StringUtils.substringBefore(filePath, type);
-				break;
-			}
-		}
-		if(!dir.equals("")) {
-			this.csarFilePath = dir;
-		}
+		this.csarFilePath = AlarmFormat.alarmRootPath + filePath;
+		String[] filePathArray  = filePath.split("/");
+		this.fileName = filePathArray[filePathArray.length-1];
 	}
 	
 	private void setAlarmStatus(String status) {
@@ -183,7 +179,9 @@ public class AlarmFormat {
 	
 	private void refreshLatestValue(String expression) {
 		try {
-			File dir = new File(this.csarFilePath);
+			//something like /tmp/
+			String dirString = this.extractDir();
+			File dir = new File(dirString);
 			Process ps = Runtime.getRuntime().exec(expression, null, dir);
 			ps.waitFor();
 			BufferedReader br = new BufferedReader(new InputStreamReader(ps.getInputStream()));
@@ -196,6 +194,29 @@ public class AlarmFormat {
 		}catch(Exception e) {
 			e.printStackTrace();
 		}
+	}
+	private String extractDir() {
+		String cmd = null;
+		String dir = StringUtils.substringBefore(this.csarFilePath, this.fileName);
+		if(this.csarFilePath.endsWith(".tar")) {
+			cmd = "tar -xvf " + this.csarFilePath + " -C " + dir;
+		}
+		if(this.csarFilePath.endsWith(".tar.gz") || this.csarFilePath.endsWith(".tgz")) {
+			cmd = "tar -xzvf " + this.csarFilePath + " -C " + dir;
+		}
+		Process p;
+		try {
+			p = Runtime.getRuntime().exec(cmd);
+			p.waitFor();
+			if(p.exitValue() != 0) {
+				System.out.println("tar error");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		return dir;
 	}
 	
 	private void refreshStatus() {

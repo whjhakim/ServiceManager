@@ -43,7 +43,7 @@ public class Mongo {
 			Document doc = mongoCursor.next();
 			String monitorTarget = String.valueOf(doc.get("monitortarget"));
 			List<Object> value = (ArrayList<Object>) doc.get("data");
-			JSONObject valueLatest = JSONObject.fromObject(value.get(0));
+			JSONObject valueLatest = JSONObject.fromObject(value.get(value.size()-1));
 			String valueStr = String.valueOf(valueLatest.get("value"));
 			vnfMonitor.put(monitorTarget, valueStr);
 		}

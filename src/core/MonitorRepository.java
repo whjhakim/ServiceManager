@@ -28,8 +28,23 @@ public class MonitorRepository {
 	}
 	
 	public void putMonitorFormat(MonitorFormat format) {
-		this.monitorRepo.get(format.getNsTypeId()).get(format.getVnfNodeId())
-			.put(format.getMonitorTarget(),format);
+		String nsTypeId = format.getNsTypeId();
+		String vnfNodeId = format.getVnfNodeId();
+		String monitorTargetId = format.getMonitorTarget();
+		if(!this.monitorRepo.containsKey(nsTypeId)){
+			Map<String, MonitorFormat> monitorTarget = new HashMap<String, MonitorFormat>();
+			monitorTarget.put(monitorTargetId, format);
+			Map<String,Map<String, MonitorFormat>> monitorVNF = new HashMap<String,
+					Map<String, MonitorFormat>>();
+			monitorVNF.put(vnfNodeId, monitorTarget);
+			this.monitorRepo.put(nsTypeId, monitorVNF);
+		}else if(!this.monitorRepo.get(nsTypeId).containsKey(vnfNodeId)) {
+			Map<String, MonitorFormat> monitorTarget = new HashMap<String, MonitorFormat>();
+			monitorTarget.put(monitorTargetId, format);
+			this.monitorRepo.get(nsTypeId).put(vnfNodeId, monitorTarget);
+		}else {
+			this.monitorRepo.get(nsTypeId).get(vnfNodeId).put(monitorTargetId, format);
+		}
 		for(String itemConfigId : format.getItemMap().keySet()) {
 			this.quickConfig.put(itemConfigId, format.getItemMap().get(itemConfigId));
 		}

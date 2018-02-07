@@ -20,12 +20,27 @@ public class MonitorTimer {
 		this.monitorThreads = monitorThreads;
 	}
 	
-	public void addTimer(MonitorFormat monitorFormat) {
-		MonitorTimerTask monitorTimerTask = new MonitorTimerTask(monitorFormat, mongo, this.monitorThreads);
-		this.timerMap.get(monitorFormat.getNsTypeId()).get(monitorFormat.getVnfNodeId())
-			.put(monitorFormat.getMonitorTarget(), monitorTimerTask);
-
-		String interval = monitorFormat.getInterval();
+	public void addTimer(MonitorFormat format) {
+		MonitorTimerTask monitorTimerTask = new MonitorTimerTask(format, mongo, this.monitorThreads);
+		
+		String nsTypeId = format.getNsTypeId();
+		String vnfNodeId = format.getVnfNodeId();
+		String monitorTargetId = format.getMonitorTarget();
+		if(!this.timerMap.containsKey(nsTypeId)){
+			Map<String, MonitorTimerTask> monitorTarget = new HashMap<String, MonitorTimerTask>();
+			monitorTarget.put(monitorTargetId, monitorTimerTask);
+			Map<String,Map<String, MonitorTimerTask>> monitorVNF = new HashMap<String,
+					Map<String, MonitorTimerTask>>();
+			monitorVNF.put(vnfNodeId, monitorTarget);
+			this.timerMap.put(nsTypeId, monitorVNF);
+		}else if(!this.timerMap.get(nsTypeId).containsKey(vnfNodeId)) {
+			Map<String, MonitorTimerTask> monitorTarget = new HashMap<String, MonitorTimerTask>();
+			monitorTarget.put(monitorTargetId, monitorTimerTask);
+			this.timerMap.get(nsTypeId).put(vnfNodeId, monitorTarget);
+		}else {
+			this.timerMap.get(nsTypeId).get(vnfNodeId).put(monitorTargetId, monitorTimerTask);
+		}	
+		String interval = format.getInterval();
 		timer.schedule(monitorTimerTask, 0, Long.valueOf(interval));
 	}
 	

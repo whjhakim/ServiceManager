@@ -64,6 +64,8 @@ public class CustomDriver extends HttpServlet {
 			String command = monitorObject.getString("command");
 			String itemId = this.customRepo.register(serverId, monitorTargetId
 					, monitorConfigId, filePath, ip, command);
+			String updateTime = monitorObject.getString("updateTime");
+			this.customTimer.addTimer(itemId, customRepo, updateTime);
 			JSONObject itemJSON = new JSONObject();
 			itemJSON.put("itemId", itemId);
 			response.getWriter().write(itemJSON.toString());
