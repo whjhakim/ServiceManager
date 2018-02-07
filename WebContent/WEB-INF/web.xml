@@ -36,7 +36,7 @@
     <servlet-name>ZabbixDriver</servlet-name>
     <url-pattern>/zabbixDriver</url-pattern>
   </servlet-mapping>
-    <servlet>
+  <servlet>
     <servlet-name>NewtonDriver</servlet-name>
     <servlet-class>OpenStackDriver.NewtonDriver</servlet-class>
     <load-on-startup>4</load-on-startup>
@@ -44,5 +44,14 @@
   <servlet-mapping>
     <servlet-name>NewtonDriver</servlet-name>
     <url-pattern>/newtonDriver</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <servlet-name>CustomDriver</servlet-name>
+    <servlet-class>customDriver.CustomDriver</servlet-class>
+    <load-on-startup>5</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>CustomDriver</servlet-name>
+    <url-pattern>/customDriver</url-pattern>
   </servlet-mapping>
 </web-app>

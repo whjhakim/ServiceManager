@@ -1,6 +1,8 @@
 package core;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,7 +23,7 @@ public class MonitorDriverType {
 	}
 	
 	private void readConfig(String filePath){
-		String path = System.getProperty("user.dir") + "/src/core/" + filePath;
+		String path = "/home/whj/eclipse-workspace/ServiceManager" + "/src/core/" + filePath;
 		yaml = new Yaml();
 		try {
 			result =JSONObject.fromObject(yaml.load(new FileInputStream(path)));

@@ -1,6 +1,8 @@
 package OpenStackDriver;
 
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,12 +23,12 @@ public class DriverRepo {
 	public DriverRepo() {
 		this.serversInfo = new HashMap<String, Map<String, Map<String, String>>>();
 		this.serverIp = new HashMap<String, String>();
-		this.itemCommand = new HashMap<String, Map<String,String>>();
+		this.itemCommand = new HashMap<String, Map<String, String>>();
 		this.extendType();
 	}
 	
 	private void extendType(){
-		String path = System.getProperty("user.dir") + "/src/OpenStackDriver/ExtendType.yaml";
+		String path = "/home/whj/eclipse-workspace/ServiceManager" + "/src/OpenStackDriver/ExtendType.yaml";
 		Yaml yaml = new Yaml();
 		JSONObject result = null;
 		try {
@@ -37,11 +39,16 @@ public class DriverRepo {
 		for(Object obj : result.keySet()) {
 			String type = obj.toString();
 			JSONObject items = JSONObject.fromObject(result.get(obj));
+			Map<String, String> itemsMap = new HashMap<String, String>();
 			for(Object item : items.keySet()) {
 				String command = String.valueOf(items.get(item));
 				String itemStr = item.toString();
-				this.itemCommand.get(type).put(itemStr, command);
+				System.out.println(type);
+				System.out.println(itemStr);
+				System.out.println(command);
+				itemsMap.put(itemStr, command);
 			}
+			this.itemCommand.put(type, itemsMap);
 		}
 	}
 	
@@ -57,10 +64,11 @@ public class DriverRepo {
 		return this.itemCommand;
 	}
 	
-	public void registerServer(String server) {
+	public void registerServer(String server, String ip) {
 		System.out.println("register server");
 		Map<String,Map<String, String>> serverObj = this.initiateServerObj(); 
 		this.serversInfo.put(server, serverObj);
+		this.serverIp.put(server, ip);
 		String testValue = this.serversInfo.get(server).get("vmInfo").get("host");
 		System.out.println("test value is" + testValue);
 	}
@@ -120,7 +128,6 @@ public class DriverRepo {
 		disk.put("freeDisk", "null");
 
 		serverInfo.put("disk", disk);
-
 		System.out.println("initiate the serverObj");
 		return serverInfo;
 	}

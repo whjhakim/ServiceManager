@@ -1,4 +1,4 @@
-package OpenStackDriver;
+package common;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -40,7 +40,7 @@ public class SSHHelper {
 	public String execute(final String command) {
 		int returnCode = 0;
 		JSch jsch = new JSch();
-		NewtonUserInfo userInfo = new NewtonUserInfo();
+		SSHUserInfo userInfo = new SSHUserInfo();
   
 		try {
 			//创建session并且打开连接，因为创建session之后要主动打开连接

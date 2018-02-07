@@ -1,7 +1,7 @@
-package OpenStackDriver;
+package common;
 import com.jcraft.jsch.UserInfo;
 
-public class NewtonUserInfo implements UserInfo {
+public class SSHUserInfo implements UserInfo {
   
   @Override
   public String getPassphrase() {

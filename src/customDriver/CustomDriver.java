@@ -1,4 +1,4 @@
-package OpenStackDriver;
+package customDriver;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,27 +12,22 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import net.sf.json.JSONObject;
-/**
- * Servlet implementation class NewtonDriver
- */
-@WebServlet("/NewtonDriver")
-public class NewtonDriver extends HttpServlet {
-	private static final long serialVersionUID = 1L;
-    private DriverRepo driverRepo; 
-    private NewtonHttpClient newtonHttpClient;
-    private NewtonTimer newtonTimer;
 
-    public NewtonDriver() {
+/**
+ * Servlet implementation class CustomDriver
+ */
+@WebServlet("/CustomDriver")
+public class CustomDriver extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+	private CustomRepo customRepo;
+	private CustomTimer customTimer;
+       
+    public CustomDriver() {
         super();
-        System.out.println("newton Driver initiates");
-        driverRepo = new DriverRepo(); 
-        this.newtonHttpClient = new NewtonHttpClient();
-        
-        long gap = 30000;
-        this.newtonTimer = new NewtonTimer(gap);
+        customRepo = new CustomRepo();
+        customTimer = new CustomTimer(20*1000);
     }
 
-    //we need the itemId as the parameter
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		request.setCharacterEncoding("UTF-8");
 		String result = "null";
@@ -40,7 +35,7 @@ public class NewtonDriver extends HttpServlet {
 		if(request.getParameter("itemId") != null) {
 			String monitorItemId = request.getParameter("itemId");
 			try {
-				result = this.driverRepo.getItemValue(monitorItemId);
+				result = this.customRepo.getItemValue(monitorItemId);
 			}catch(Exception e) {
 				e.printStackTrace();
 			}
@@ -48,7 +43,7 @@ public class NewtonDriver extends HttpServlet {
 		response.getWriter().write(result);
 	}
 
-	//we need the request like this:  serverId publicIp type item
+	//serverId filePack fileType command ip monitorTarget monitorConfig
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("text/html;charset=UTF-8");
 		try {
@@ -62,10 +57,13 @@ public class NewtonDriver extends HttpServlet {
 			String acceptJSON = stringBuffer.toString();
 			JSONObject monitorObject  = JSONObject.fromObject(acceptJSON);
 			String serverId = monitorObject.getString("serverId");
-			String type = monitorObject.getString("type");
-			String item = monitorObject.getString("item");
-			String ip = monitorObject.getString("item");
-			String itemId = this.register(serverId, type, item, ip);
+			String filePath = monitorObject.getString("filePath");
+			String ip = monitorObject.getString("ip");
+			String monitorTargetId = monitorObject.getString("monitorTargetId");
+			String monitorConfigId = monitorObject.getString("monitorConfigId");
+			String command = monitorObject.getString("command");
+			String itemId = this.customRepo.register(serverId, monitorTargetId
+					, monitorConfigId, filePath, ip, command);
 			JSONObject itemJSON = new JSONObject();
 			itemJSON.put("itemId", itemId);
 			response.getWriter().write(itemJSON.toString());
@@ -73,18 +71,5 @@ public class NewtonDriver extends HttpServlet {
 			e.printStackTrace();
 			response.getWriter().write("sad");
 		}
-	}
-
-	//return itemId
-	public String register(String serverId, String type, String item, String ip) {
-		if(!this.driverRepo.containServer(serverId)) {
-			System.out.println("not contain the server");
-			this.driverRepo.registerServer(serverId, ip);
-		}
-		if(this.driverRepo.getItemValue(serverId, type, item).equals("null")) {
-			//means the timer is not set
-			this.newtonTimer.addTimer(serverId, this.newtonHttpClient, this.driverRepo);
-		}
-		return this.driverRepo.createItemId(serverId, type, item);
 	}
 }
